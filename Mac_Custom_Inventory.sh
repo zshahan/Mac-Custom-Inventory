@@ -229,17 +229,21 @@ if [ "$CollectDeviceInventory" = true ]; then
     fi
 
     # --- Battery Info ---
-    battery_data=$(ioreg -r -n AppleSmartBattery)
-    if [ "$cpu_vendor" == "Apple" ]; then
-        max_capacity=$(echo "$battery_data" | awk '/"AppleRawMaxCapacity" / { print $NF }')
-    else
-        max_capacity=$(echo "$battery_data" | awk '/"MaxCapacity" / { print $NF }')
-    fi
-    design_capacity=$(echo "$battery_data" | awk '/"DesignCapacity" / { print $NF }')
-    battery_health=""
-    if [ -n "$max_capacity" ] && [ -n "$design_capacity" ]; then
-        percent=$(echo "scale=2; $max_capacity/$design_capacity*100" | bc)
-        battery_health=$(printf "%.2f" "$percent")
+    battery_check=$(pmset -g batt 2>&1)
+
+    if [[ "$battery_check" != *"No battery"* ]]; then
+        battery_data=$(ioreg -r -n AppleSmartBattery)
+        if [ "$cpu_vendor" == "Apple" ]; then
+            max_capacity=$(echo "$battery_data" | awk '/"AppleRawMaxCapacity" / { print $NF }')
+        else
+            max_capacity=$(echo "$battery_data" | awk '/"MaxCapacity" / { print $NF }')
+        fi
+        design_capacity=$(echo "$battery_data" | awk '/"DesignCapacity" / { print $NF }')
+        battery_health=""
+        if [ -n "$max_capacity" ] && [ -n "$design_capacity" ]; then
+            percent=$(echo "scale=2; $max_capacity/$design_capacity*100" | bc)
+            battery_health=$(printf "%.2f" "$percent")
+        fi
     fi
 
     # --- Build Raw JSON ---
